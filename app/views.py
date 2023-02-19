@@ -1,5 +1,8 @@
 from app import app
 from flask import render_template, request, redirect, url_for, flash
+from app import mail
+from flask_mail import Message
+from app.forms import ContactForm
 
 
 ###
@@ -16,6 +19,37 @@ def home():
 def about():
     """Render the website's about page."""
     return render_template('about.html', name="Mary Jane")
+
+
+@app.route('/contact/', methods=['GET','POST'])
+def contact():
+    """Render the website's contact page."""
+    contactForm = ContactForm(request.form)
+    if (request.method == 'POST'):
+
+        if (contactForm.validate_on_submit()):
+
+            try:
+                form = request.form
+                msg = Message(form['subject'], sender=(
+                    form['name'], form['email']), recipients=["to@gmail.com"])
+                msg.body = form['message']
+                mail.send(msg)
+                flash(
+                    "Your message was sent! Thank you for reaching out to us " + form['name'])
+
+                return redirect(url_for('home'))
+            except Exception as e:
+                print(format(e))
+                flash("Something went wrong", category="error")
+                return render_template("contact.html", form=contactForm)
+
+        else:
+
+            flash(
+                "Oops! Something went wrong. Please confirm that you correctly completed the form", category="error")
+
+    return render_template("contact.html", form=contactForm)
 
 
 ###
